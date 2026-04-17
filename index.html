@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline Instagram Clone</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="ig-sidebar">
+        <div class="brand">Instagram</div>
+        <nav class="ig-nav">
+          <button id="view-feed" class="nav-btn active" type="button">Home</button>
+          <button id="view-explore" class="nav-btn" type="button">Explore</button>
+          <button id="view-profile" class="nav-btn" type="button">Profile</button>
+          <button id="view-reels" class="nav-btn" type="button">Reels</button>
+          <button id="view-dm" class="nav-btn" type="button">✉ Messages</button>
+        </nav>
+
+        <section class="sidebar-card">
+          <h2>Create account</h2>
+          <form id="account-form" class="stack">
+            <input id="username" name="username" type="text" maxlength="24" placeholder="username" required />
+            <label for="avatar" class="muted small">Profile picture (click to crop)</label>
+            <input id="avatar" name="avatar" type="file" accept="image/*" />
+            <button type="submit">Add account</button>
+          </form>
+        </section>
+
+        <section class="sidebar-card">
+          <h2>Accounts</h2>
+          <ul id="account-list" class="account-list"></ul>
+        </section>
+      </aside>
+
+      <main class="ig-main">
+        <header class="ig-topbar">
+          <h1 id="view-title">Home feed</h1>
+          <div class="top-actions">
+            <input id="search-input" type="search" placeholder="Search accounts or captions" />
+            <button id="clear-data" class="ghost" type="button">Reset local data</button>
+          </div>
+        </header>
+
+        <section id="search-results" class="search-results hidden"></section>
+
+        <section id="compose-card" class="compose-card">
+          <p id="active-account" class="muted">No account selected</p>
+          <form id="post-form" class="stack">
+            <input id="photo" name="photo" type="file" accept="image/*" required />
+            <textarea id="caption" name="caption" rows="3" maxlength="220" placeholder="Write a caption..."></textarea>
+            <button type="submit">Post</button>
+          </form>
+        </section>
+
+        <section id="dm-panel" class="dm-card hidden">
+          <h2>Fake DMs</h2>
+          <form id="dm-form" class="stack">
+            <div class="dm-row">
+              <select id="dm-from" name="from" required></select>
+              <select id="dm-to" name="to" required></select>
+            </div>
+            <input id="dm-text" name="text" type="text" maxlength="200" placeholder="Type a message..." required />
+            <button type="submit">Send DM</button>
+          </form>
+          <div id="dm-thread" class="dm-thread"></div>
+        </section>
+
+        <section id="profile-header" class="profile-header hidden"></section>
+
+        <section id="feed" class="feed"></section>
+      </main>
+    </div>
+
+    <section id="reels-overlay" class="reels-overlay hidden" aria-label="Reels view">
+      <button id="close-reels" class="reel-close" type="button">Back</button>
+      <article id="reel-stage" class="reel-stage"></article>
+      <button id="next-reel" class="reel-next" type="button" aria-label="Next reel">↓</button>
+    </section>
+
+    <template id="post-template">
+      <article class="post" tabindex="0">
+        <header class="post-head">
+          <div class="user-line">
+            <button type="button" class="user-trigger">
+              <img class="avatar" alt="Profile picture" />
+            </button>
+            <div>
+              <button type="button" class="post-user user-trigger-text"></button>
+              <p class="post-time muted small"></p>
+            </div>
+          </div>
+        </header>
+        <img class="post-image" alt="Posted photo" />
+        <div class="post-actions">
+          <button type="button" class="action-btn like-btn">♡ Like</button>
+          <button type="button" class="action-btn comment-btn">💬 Comment</button>
+        </div>
+        <p class="post-caption"></p>
+        <footer class="post-footer">
+          <span class="post-likes-count muted small"></span>
+          <span class="post-comments-count muted small"></span>
+        </footer>
+      </article>
+    </template>
+
+    <dialog id="post-modal" class="post-modal">
+      <article class="modal-content">
+        <button id="close-modal" class="close" type="button" aria-label="Close">×</button>
+        <img id="modal-image" class="modal-image" alt="Selected post" />
+        <div class="modal-meta">
+          <div class="user-line">
+            <button type="button" id="modal-user-trigger" class="user-trigger">
+              <img id="modal-avatar" class="avatar" alt="Profile picture" />
+            </button>
+            <div>
+              <button type="button" id="modal-user" class="user-trigger-text"></button>
+              <p id="modal-time" class="muted small"></p>
+            </div>
+          </div>
+          <p id="modal-caption"></p>
+          <h4>Comments</h4>
+          <ul id="modal-comments" class="comment-list"></ul>
+          <form id="comment-form" class="stack">
+            <input id="comment-input" name="comment" type="text" maxlength="180" placeholder="Write a comment..." required />
+            <button type="submit">Add comment</button>
+          </form>
+        </div>
+      </article>
+    </dialog>
+
+    <dialog id="crop-dialog" class="crop-dialog">
+      <section class="crop-panel">
+        <h3 id="crop-title">Crop image</h3>
+        <div id="crop-viewport" class="crop-viewport">
+          <img id="crop-image" alt="Crop preview" />
+        </div>
+        <label class="small">Zoom <input id="crop-zoom" type="range" min="1" max="3" step="0.01" value="1" /></label>
+        <div class="inline-actions">
+          <button type="button" id="cancel-crop" class="ghost">Cancel</button>
+          <button type="button" id="apply-crop">Apply Crop</button>
+        </div>
+      </section>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
