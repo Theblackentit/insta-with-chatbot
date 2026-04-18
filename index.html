@@ -1,149 +1,1280 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Offline Instagram Clone</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="ig-sidebar">
-        <div class="brand">Instagram</div>
-        <nav class="ig-nav">
-          <button id="view-feed" class="nav-btn active" type="button">Home</button>
-          <button id="view-explore" class="nav-btn" type="button">Explore</button>
-          <button id="view-profile" class="nav-btn" type="button">Profile</button>
-          <button id="view-reels" class="nav-btn" type="button">Reels</button>
-          <button id="view-dm" class="nav-btn" type="button">✉ Messages</button>
-        </nav>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Instagram</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--s1:#121212;--s2:#1c1c1c;--s3:#262626;--s4:#363636;
+  --text:#fff;--muted:#a8a8a8;--border:#363636;
+  --accent:#0095f6;--like:#ed4956;--gold:#f5c518;
+  --story:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5);
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
+input,textarea,button,select{font:inherit}
+button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--s4);border-radius:4px}
 
-        <section class="sidebar-card">
-          <h2>Create account</h2>
-          <form id="account-form" class="stack">
-            <input id="username" name="username" type="text" maxlength="24" placeholder="username" required />
-            <label for="avatar" class="muted small">Profile picture (click to crop)</label>
-            <input id="avatar" name="avatar" type="file" accept="image/*" />
-            <button type="submit">Add account</button>
-          </form>
-        </section>
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;border-right:1px solid var(--border);padding:8px 12px 20px;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;background:var(--bg);transition:width .2s}
+.sidebar-logo{padding:26px 12px 18px;font-family:"Billabong","Dancing Script",cursive;font-size:26px;letter-spacing:-.5px;cursor:default;display:flex;align-items:center;gap:8px}
+.nav-item{display:flex;align-items:center;gap:16px;padding:12px;border-radius:10px;cursor:pointer;border:none;background:none;color:var(--text);font-size:16px;width:100%;text-align:left;transition:background .1s;font-weight:400;position:relative}
+.nav-item:hover{background:var(--s3)}
+.nav-item.active{font-weight:700}
+.nav-item.active svg{stroke-width:2.5}
+.nav-icon{width:24px;height:24px;flex-shrink:0}
+.sidebar-gap{flex:1}
+.main{margin-left:245px;flex:1;display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
+.content-wrap{display:flex;width:100%;max-width:975px;padding:0 20px}
+.feed-col{flex:1;max-width:470px;padding:24px 0;margin:0 auto}
+.right-col{width:290px;flex-shrink:0;padding:24px 0 24px 28px;position:sticky;top:0;max-height:100vh;overflow-y:auto}
+.right-col::-webkit-scrollbar{display:none}
 
-        <section class="sidebar-card">
-          <h2>Accounts</h2>
-          <ul id="account-list" class="account-list"></ul>
-        </section>
-      </aside>
+/* ── STORIES ── */
+.stories-bar{display:flex;gap:16px;padding:8px 0 20px;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:16px;scrollbar-width:none}
+.stories-bar::-webkit-scrollbar{display:none}
+.story-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;border:none;background:none;color:var(--text)}
+.story-ring{width:56px;height:56px;border-radius:50%;background:var(--story);padding:2.5px;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
+.story-ring:hover{opacity:.85}
+.story-ring.seen{background:var(--s4)}
+.story-avatar{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2.5px solid var(--bg)}
+.story-name{font-size:12px;max-width:64px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.your-story-add{position:relative}
+.story-plus{position:absolute;bottom:0;right:0;width:18px;height:18px;background:var(--accent);border-radius:50%;border:2px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;line-height:1}
 
-      <main class="ig-main">
-        <header class="ig-topbar">
-          <h1 id="view-title">Home feed</h1>
-          <div class="top-actions">
-            <input id="search-input" type="search" placeholder="Search accounts or captions" />
-            <button id="clear-data" class="ghost" type="button">Reset local data</button>
-          </div>
-        </header>
+/* ── POST CARD ── */
+.post-card{background:var(--bg);margin-bottom:12px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.post-header{display:flex;align-items:center;padding:14px 16px;gap:10px}
+.post-av{width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;flex-shrink:0;border:1px solid var(--border)}
+.post-user-info{flex:1;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.post-username{font-weight:600;font-size:14px;cursor:pointer;color:var(--text);background:none;border:none;padding:0}
+.post-username:hover{color:var(--muted)}
+.post-dot{color:var(--muted);font-size:12px}
+.post-time{color:var(--muted);font-size:12px}
+.post-follow{background:none;border:none;color:var(--accent);font-size:14px;font-weight:600;padding:0;margin-left:auto;flex-shrink:0}
+.post-more{background:none;border:none;color:var(--text);padding:4px 8px;margin-left:4px;border-radius:4px;display:flex;align-items:center}
+.post-more:hover{background:var(--s3)}
+.post-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;cursor:pointer}
+.post-actions{display:flex;align-items:center;padding:4px 8px}
+.act-btn{background:none;border:none;color:var(--text);padding:8px;display:flex;align-items:center;border-radius:50%;transition:background .1s}
+.act-btn:hover{background:var(--s3)}
+.act-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.act-btn.liked svg{fill:var(--like);stroke:var(--like);animation:heartPop .35s ease}
+.act-btn.saved svg{fill:var(--text);stroke:var(--text)}
+.act-save{margin-left:auto}
+.post-likes{padding:2px 16px;font-weight:600;font-size:14px;cursor:pointer}
+.post-caption{padding:4px 16px 2px;font-size:14px;word-break:break-word}
+.post-caption .cap-user{font-weight:600;cursor:pointer;margin-right:4px}
+.post-caption .cap-user:hover{color:var(--muted)}
+.post-view-comments{padding:2px 16px;color:var(--muted);font-size:14px;cursor:pointer;background:none;border:none;display:block;text-align:left;width:auto}
+.post-add-comment{display:flex;align-items:center;padding:8px 16px 12px;gap:8px;border-top:1px solid var(--border);margin-top:6px}
+.post-comment-input{flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none}
+.post-comment-input::placeholder{color:var(--muted)}
+.post-post-btn{background:none;border:none;color:var(--accent);font-weight:600;font-size:14px;padding:0;opacity:.4;transition:opacity .2s;white-space:nowrap}
+.post-post-btn.on{opacity:1}
 
-        <section id="search-results" class="search-results hidden"></section>
+/* ── RIGHT SIDEBAR ── */
+.active-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.active-av{width:56px;height:56px;border-radius:50%;object-fit:cover;cursor:pointer;flex-shrink:0;border:1px solid var(--border)}
+.active-info{flex:1;min-width:0}
+.active-name{font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.active-handle{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.switch-btn{background:none;border:none;color:var(--accent);font-weight:600;font-size:12px}
+.sugg-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.sugg-title{color:var(--muted);font-weight:600;font-size:14px}
+.see-all{font-size:12px;font-weight:600;color:var(--text);background:none;border:none}
+.sugg-item{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sugg-av{width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;flex-shrink:0;border:1px solid var(--border)}
+.sugg-info{flex:1;min-width:0}
+.sugg-name{font-weight:600;font-size:14px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:none;color:var(--text);padding:0;text-align:left}
+.sugg-name:hover{color:var(--muted)}
+.sugg-meta{color:var(--muted);font-size:12px}
+.follow-btn{background:none;border:none;color:var(--accent);font-weight:600;font-size:12px;flex-shrink:0}
+.follow-btn.following{color:var(--muted)}
 
-        <section id="compose-card" class="compose-card">
-          <p id="active-account" class="muted">No account selected</p>
-          <form id="post-form" class="stack">
-            <input id="photo" name="photo" type="file" accept="image/*" required />
-            <textarea id="caption" name="caption" rows="3" maxlength="220" placeholder="Write a caption..."></textarea>
-            <button type="submit">Post</button>
-          </form>
-        </section>
+/* ── EXPLORE ── */
+.explore-wrap{padding:0;width:100%;max-width:935px}
+.explore-search-bar{padding:16px 20px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
+.explore-search{width:100%;max-width:400px;background:var(--s3);border:none;border-radius:10px;padding:10px 14px;color:var(--text);outline:none;font-size:16px}
+.explore-search::placeholder{color:var(--muted)}
+.explore-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px}
+.exp-tile{aspect-ratio:1;overflow:hidden;cursor:pointer;position:relative;background:var(--s3)}
+.exp-tile.tall{grid-row:span 2}
+.exp-tile img{width:100%;height:100%;object-fit:cover;transition:filter .2s,transform .2s}
+.exp-tile:hover img{filter:brightness(.7);transform:scale(1.02)}
+.exp-tile-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,.4)}
+.exp-tile:hover .exp-tile-overlay{opacity:1}
+.exp-like-count{color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px}
 
-        <section id="dm-panel" class="dm-card hidden">
-          <h2>Fake DMs</h2>
-          <form id="dm-form" class="stack">
-            <div class="dm-row">
-              <select id="dm-from" name="from" required></select>
-              <select id="dm-to" name="to" required></select>
-            </div>
-            <input id="dm-text" name="text" type="text" maxlength="200" placeholder="Type a message..." required />
-            <button type="submit">Send DM</button>
-          </form>
-          <div id="dm-thread" class="dm-thread"></div>
-        </section>
+/* ── REELS ── */
+.reels-wrap{display:flex;flex-direction:column;align-items:center;padding:0;width:100%;max-width:500px;margin:0 auto}
+.reel-card{width:100%;max-width:400px;height:88vh;position:relative;border-radius:12px;overflow:hidden;background:var(--s3);margin-bottom:16px;flex-shrink:0;cursor:pointer}
+.reel-img{width:100%;height:100%;object-fit:cover}
+.reel-overlay{position:absolute;bottom:0;left:0;right:0;padding:20px;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,transparent 70%)}
+.reel-user-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.reel-av{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff}
+.reel-username{font-weight:700;font-size:14px}
+.reel-follow-btn{background:none;border:1px solid #fff;color:#fff;border-radius:6px;padding:4px 12px;font-size:13px;font-weight:600}
+.reel-caption{font-size:14px;color:#eee;max-height:60px;overflow:hidden}
+.reel-actions{position:absolute;right:12px;bottom:80px;display:flex;flex-direction:column;gap:24px;align-items:center}
+.reel-act{background:none;border:none;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px}
+.reel-act svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.reel-act.liked svg{fill:var(--like);stroke:var(--like)}
 
-        <section id="profile-header" class="profile-header hidden"></section>
+/* ── PROFILE ── */
+.profile-wrap{width:100%;max-width:935px;padding:30px 20px;margin:0 auto}
+.profile-top{display:grid;grid-template-columns:150px 1fr;gap:20px 40px;margin-bottom:44px;align-items:start}
+.profile-av-ring{width:150px;height:150px;border-radius:50%;background:var(--story);padding:3px;flex-shrink:0}
+.profile-av-img{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid var(--bg)}
+.profile-right{padding-top:10px}
+.profile-name-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.profile-uname{font-size:20px;font-weight:300}
+.profile-action-btns{display:flex;gap:8px}
+.profile-btn{padding:7px 16px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid var(--border);background:var(--s3);color:var(--text)}
+.profile-btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+.profile-btn.following{background:var(--s3)}
+.profile-stats{display:flex;gap:40px;margin-bottom:16px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.stat-num{font-weight:700;font-size:16px}
+.stat-lbl{font-size:14px;color:var(--muted)}
+.profile-bio{font-size:14px;white-space:pre-wrap}
+.profile-tabs{display:flex;justify-content:center;gap:0;border-top:1px solid var(--border);margin-top:16px}
+.profile-tab{flex:1;max-width:180px;padding:16px 0;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;background:none;color:var(--muted);border-top:1px solid transparent;margin-top:-1px;display:flex;align-items:center;justify-content:center;gap:6px;transition:color .15s}
+.profile-tab.active{color:var(--text);border-top-color:var(--text)}
+.profile-posts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding-top:4px}
+.profile-tile{aspect-ratio:1;overflow:hidden;cursor:pointer;position:relative;background:var(--s3)}
+.profile-tile img{width:100%;height:100%;object-fit:cover;transition:filter .2s}
+.profile-tile:hover img{filter:brightness(.75)}
 
-        <section id="feed" class="feed"></section>
-      </main>
+/* ── DM ── */
+.dm-wrap{display:flex;height:100vh;width:100%;max-width:935px;border:1px solid var(--border);border-top:none;border-bottom:none}
+.dm-list{width:350px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.dm-list-hdr{padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.dm-hdr-name{font-size:16px;font-weight:700}
+.dm-hdr-btn{background:none;border:none;color:var(--text);padding:4px;display:flex;align-items:center;border-radius:4px}
+.dm-hdr-btn:hover{background:var(--s3)}
+.dm-hdr-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dm-conv-list{flex:1;overflow-y:auto}
+.dm-conv-item{display:flex;align-items:center;gap:12px;padding:10px 20px;cursor:pointer;transition:background .1s;border:none;background:none;color:var(--text);width:100%;text-align:left}
+.dm-conv-item:hover{background:var(--s2)}
+.dm-conv-item.active{background:var(--s2)}
+.dm-conv-av{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);position:relative}
+.dm-ai-dot{position:absolute;bottom:2px;right:2px;width:12px;height:12px;background:var(--accent);border-radius:50%;border:2px solid var(--bg)}
+.dm-conv-meta{flex:1;min-width:0}
+.dm-conv-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.dm-ai-badge{font-size:10px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;flex-shrink:0}
+.dm-conv-preview{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-chat{flex:1;display:flex;flex-direction:column}
+.dm-chat-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.dm-chat-av{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
+.dm-chat-name{font-weight:600;font-size:15px}
+.dm-chat-sub{font-size:12px;color:var(--muted)}
+.dm-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:6px}
+.dm-msg{max-width:65%;padding:10px 14px;border-radius:22px;font-size:14px;line-height:1.45;word-break:break-word}
+.dm-msg.sent{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
+.dm-msg.recv{background:var(--s3);color:var(--text);align-self:flex-start;border-bottom-left-radius:6px}
+.dm-msg.typing-msg{background:var(--s3);align-self:flex-start;border-bottom-left-radius:6px;padding:12px 16px}
+.typing-dots{display:flex;gap:4px;align-items:center}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tdot 1.4s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,80%,100%{opacity:.3;transform:scale(.9)}40%{opacity:1;transform:scale(1)}}
+.dm-input-area{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0}
+.dm-input{flex:1;background:transparent;border:1px solid var(--border);border-radius:22px;padding:10px 16px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.dm-input:focus{border-color:var(--muted)}
+.dm-input::placeholder{color:var(--muted)}
+.dm-send{background:none;border:none;color:var(--accent);font-weight:600;font-size:14px;padding:8px;opacity:.4;transition:opacity .2s}
+.dm-send.on{opacity:1}
+.dm-empty-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);padding:40px}
+.dm-empty-icon{width:68px;height:68px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center}
+.dm-empty-icon svg{width:32px;height:32px;fill:none;stroke:var(--muted);stroke-width:2}
+.dm-empty-title{font-size:20px;font-weight:300;color:var(--text)}
+.dm-empty-sub{font-size:14px;text-align:center}
+.dm-notice{background:rgba(0,149,246,.1);border:1px solid rgba(0,149,246,.3);border-radius:8px;padding:10px 14px;font-size:13px;color:#80caff;margin:12px 20px}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.post-modal{background:var(--bg);border:1px solid var(--border);border-radius:4px;display:flex;max-height:90vh;width:90vw;max-width:935px;overflow:hidden}
+.pm-img-side{flex:1;min-width:0;background:var(--s3);display:flex;align-items:center;justify-content:center}
+.pm-img-side img{width:100%;height:100%;max-height:90vh;object-fit:contain;display:block}
+.pm-meta-side{width:340px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--border);max-height:90vh}
+.pm-hdr{display:flex;align-items:center;padding:14px 16px;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.pm-av{width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;border:1px solid var(--border)}
+.pm-username{font-weight:600;font-size:14px;cursor:pointer;background:none;border:none;color:var(--text);padding:0}
+.pm-comments{flex:1;overflow-y:auto;padding:16px}
+.pm-comment{margin-bottom:14px;font-size:14px;line-height:1.5}
+.pm-comment strong{font-weight:600;margin-right:5px;cursor:pointer}
+.pm-comment strong:hover{color:var(--muted)}
+.pm-comment time{color:var(--muted);font-size:11px;margin-left:6px}
+.pm-actions{border-top:1px solid var(--border);padding:8px 16px 0;flex-shrink:0;display:flex;gap:0}
+.pm-likes{padding:6px 16px 4px;font-weight:600;font-size:14px;flex-shrink:0}
+.pm-caption{padding:0 16px 6px;font-size:14px;flex-shrink:0;word-break:break-word}
+.pm-caption strong{font-weight:600;margin-right:4px;cursor:pointer}
+.pm-add-comment{display:flex;align-items:center;padding:12px 16px;gap:8px;border-top:1px solid var(--border);flex-shrink:0}
+.pm-comment-input{flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none}
+.pm-comment-input::placeholder{color:var(--muted)}
+.pm-post-btn{background:none;border:none;color:var(--accent);font-weight:600;font-size:14px;opacity:.4;transition:opacity .2s;white-space:nowrap}
+.pm-post-btn.on{opacity:1}
+.modal-close-btn{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.6);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;display:flex;align-items:center;justify-content:center;z-index:201;line-height:1}
+.modal-close-btn:hover{background:rgba(255,255,255,.15)}
+
+/* Story modal */
+.story-modal{width:min(400px,100%);height:min(700px,90vh);border-radius:12px;overflow:hidden;background:var(--s3);position:relative;flex-shrink:0}
+.story-modal img{width:100%;height:100%;object-fit:cover}
+.story-modal-hdr{position:absolute;top:0;left:0;right:0;padding:16px;background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 100%)}
+.story-progress{height:2px;background:rgba(255,255,255,.4);border-radius:2px;margin-bottom:12px}
+.story-progress-bar{height:100%;background:#fff;border-radius:2px;animation:storyProg 5s linear forwards}
+@keyframes storyProg{from{width:0}to{width:100%}}
+.story-modal-user{display:flex;align-items:center;gap:8px}
+.story-modal-av{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #fff}
+.story-modal-name{font-weight:700;font-size:14px;color:#fff}
+.story-modal-time{font-size:12px;color:rgba(255,255,255,.7)}
+
+/* Create post modal */
+.create-modal{background:var(--s1);border-radius:12px;width:90vw;max-width:680px;overflow:hidden}
+.create-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.create-title{font-size:16px;font-weight:600;flex:1;text-align:center}
+.create-body{padding:24px;min-height:300px}
+.upload-area{border:2px dashed var(--border);border-radius:10px;padding:48px 24px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.upload-area:hover{border-color:var(--muted)}
+.upload-icon{font-size:48px;margin-bottom:12px}
+.upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.caption-area{padding:0 24px 24px}
+.caption-textarea{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--text);font-size:14px;resize:none;outline:none;padding:8px 0;min-height:80px}
+.caption-textarea::placeholder{color:var(--muted)}
+.create-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.share-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-weight:600;font-size:14px}
+.share-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Settings modal */
+.settings-modal{background:var(--s1);border-radius:12px;width:90vw;max-width:480px;overflow:hidden}
+.settings-hdr{padding:16px 20px;border-bottom:1px solid var(--border);font-size:16px;font-weight:600;text-align:center}
+.settings-body{padding:24px}
+.settings-section{margin-bottom:24px}
+.settings-label{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.settings-input{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.settings-input:focus{border-color:var(--accent)}
+.settings-hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.settings-save{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:600;font-size:14px;margin-top:4px}
+.settings-save:hover{background:#0086e0}
+.accounts-section{margin-top:16px}
+.acc-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;background:none;border-left:none;border-right:none;border-top:none;color:var(--text);width:100%;text-align:left}
+.acc-item:last-child{border-bottom:none}
+.acc-item:hover .acc-name{color:var(--muted)}
+.acc-check{margin-left:auto;color:var(--accent)}
+.acc-av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+.acc-info{flex:1;min-width:0}
+.acc-name{font-weight:600;font-size:14px}
+.acc-handle{font-size:12px;color:var(--muted)}
+.new-acc-form{margin-top:16px;display:grid;gap:10px}
+.new-acc-input{background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;width:100%}
+.new-acc-input:focus{border-color:var(--accent)}
+.new-acc-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px;font-weight:600;font-size:14px;align-self:flex-start;padding:10px 20px}
+
+/* Crop modal */
+.crop-modal{background:var(--s1);border-radius:12px;width:90vw;max-width:520px;overflow:hidden}
+.crop-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.crop-title-text{font-size:16px;font-weight:600;flex:1;text-align:center}
+.crop-body{padding:20px}
+.crop-vp{width:100%;aspect-ratio:1;border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative;background:#000;cursor:grab}
+.crop-vp:active{cursor:grabbing}
+.crop-vp img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);user-select:none;pointer-events:none}
+.crop-controls{margin-top:14px;display:grid;gap:10px}
+.crop-label{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px}
+.crop-range{width:100%;accent-color:var(--accent)}
+.crop-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.crop-cancel{background:var(--s3);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600}
+.crop-apply{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--s3);color:var(--text);padding:12px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;border:1px solid var(--border)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── MISC ── */
+.hidden{display:none!important}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);width:100%}
+.empty-icon{font-size:48px;display:block;margin-bottom:16px}
+@keyframes heartPop{0%{transform:scale(1)}30%{transform:scale(1.4)}60%{transform:scale(.95)}100%{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.post-card,.reel-card{animation:fadeIn .3s ease}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){.right-col,.content-wrap .right-col{display:none}}
+@media(max-width:900px){.pm-meta-side{width:280px}}
+@media(max-width:768px){
+  .sidebar{width:72px;padding:8px 6px}
+  .sidebar-logo{font-size:18px;padding:20px 8px 14px}
+  .nav-item span{display:none}
+  .main{margin-left:72px}
+  .dm-list{width:70px}
+  .dm-conv-meta,.dm-hdr-name,.dm-hdr-btn~.dm-hdr-name{display:none}
+}
+@media(max-width:600px){
+  .post-modal{flex-direction:column;max-height:95vh}
+  .pm-img-side{max-height:50vh}
+  .pm-meta-side{width:100%;border-left:none;border-top:1px solid var(--border)}
+  .profile-top{grid-template-columns:90px 1fr;gap:12px 20px}
+  .profile-av-ring{width:90px;height:90px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+<script>
+// ═══════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════
+const I={
+home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+homeFilled:`<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" stroke="currentColor" stroke-width="1" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline fill="white" stroke="none" points="9 22 9 12 15 12 15 22"/></svg>`,
+search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+explore:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88"/></svg>`,
+reels:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>`,
+messages:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+heart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`,
+heartFilled:`<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path fill="#ed4956" stroke="#ed4956" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`,
+comment:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+share:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+bookmark:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>`,
+bookmarkFilled:`<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" stroke="currentColor" stroke-width="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>`,
+create:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+profile:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+settings:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
+dots:`<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>`,
+close:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+grid:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+tag:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+newmsg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+send:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+};
+
+function svg(icon,cls=''){return`<span class="nav-icon ${cls}" style="display:flex;align-items:center;justify-content:center">${I[icon]||''}</span>`}
+
+// ═══════════════════════════════════════════════════
+// CONSTANTS & STORAGE
+// ═══════════════════════════════════════════════════
+const SK='ig-clone-v3';
+const NOW=Date.now();
+const DAY=86400000;
+
+// ═══════════════════════════════════════════════════
+// FAKE USERS & SEED DATA
+// ═══════════════════════════════════════════════════
+const FAKE_USERS=[
+  {id:'u_alex',username:'alex_photography',displayName:'Alex Chen',
+   bio:'📷 Street photographer. Finding beauty in the mundane.\nNYC based | Open to collab',
+   color:'#7B5EA7',followers:12847,following:389,fake:true,
+   persona:`You are Alex Chen, a street photographer in NYC. You are thoughtful, artistic, quietly passionate. You speak in short, meaningful sentences. You love light, composition, and the stories behind ordinary moments. You're humble about your work. You sometimes ask the person you're talking to what they see in your photos. Keep replies 1-3 sentences. Be real, not corporate.`},
+  {id:'u_luna',username:'luna.wellness',displayName:'Luna Martinez',
+   bio:'🌙 Yoga teacher | Reiki practitioner\n✨ Helping you come home to yourself',
+   color:'#C77DFF',followers:28943,following:512,fake:true,
+   persona:`You are Luna Martinez, a yoga teacher and wellness influencer. You're warm, deeply spiritual, and use emojis naturally. You talk about energy, healing, manifestation, and self-love. Everything is a sign or a lesson. You're enthusiastic and encouraging. You sometimes recommend breathwork, crystal healing, or journaling. Keep replies 1-3 sentences. Use occasional emojis like ✨🌙💜🫶`},
+  {id:'u_marco',username:'chef_marco',displayName:'Marco Russo',
+   bio:'🍝 Italian-American chef | Food is love\nChef @ Osteria Rustico, NYC',
+   color:'#FF6B35',followers:9231,following:724,fake:true,
+   persona:`You are Marco Russo, an Italian-American chef who is loud, warm, and passionate about food. You use Italian words and expressions naturally like "mamma mia", "bello/bella", "mangiare", "che cosa". Everything reminds you of something your Nonna made. You give unsolicited food opinions and cooking tips. You have strong feelings about pasta. Keep replies 1-3 sentences. Be expressive and fun.`},
+  {id:'u_jade',username:'jade.fitness',displayName:'Jade Kim',
+   bio:'💪 NASM Certified PT | 5x Powerlifting Champion\nDM for coaching spots',
+   color:'#06D6A0',followers:47621,following:831,fake:true,
+   persona:`You are Jade Kim, a powerlifting champion and fitness coach. You're direct, motivational, and no-nonsense. You believe in discipline over motivation. You drop fitness facts naturally. You hate excuses (kindly). You celebrate small wins enthusiastically. You sometimes ask about the person's fitness goals. Keep replies 1-3 sentences. High energy, no fluff.`},
+  {id:'u_sam',username:'nomad.sam',displayName:'Sam Rivera',
+   bio:'🌍 34 countries & counting | Chasing light & stories\n📍 Currently: wherever the wind blows',
+   color:'#118AB2',followers:63847,following:1204,fake:true,
+   persona:`You are Sam Rivera, a travel photographer and digital nomad. You're adventurous, free-spirited, and full of vivid stories. You compare things to places you've been. You give travel tips and recommendations enthusiastically. You see beauty everywhere. You have strong feelings about not being tied down. Keep replies 1-3 sentences. Evoke wanderlust.`},
+  {id:'u_dev',username:'dev.diary',displayName:'Taylor Nguyen',
+   bio:'💻 Software engineer | Side project addict\nBuilding in public | Coffee ☕ dependent',
+   color:'#3A86FF',followers:8104,following:276,fake:true,
+   persona:`You are Taylor Nguyen, a software engineer who is witty, self-deprecating, and quietly brilliant. You make programming jokes and tech references naturally. You're sarcastic but never mean. You relate most things to code or debugging. You have imposter syndrome but pretend you don't. Keep replies 1-3 sentences. Be clever and dry.`},
+];
+
+const POST_THEMES=[
+  {c1:'#0a0a2e',c2:'#16213e',c3:'#0f3460',c4:'#e94560',type:'geo'},
+  {c1:'#2d1b69',c2:'#9b5de5',c3:'#f15bb5',c4:'#fee440',type:'soft'},
+  {c1:'#7f1d1d',c2:'#dc2626',c3:'#f97316',c4:'#fef08a',type:'warm'},
+  {c1:'#052e16',c2:'#166534',c3:'#16a34a',c4:'#bbf7d0',type:'geo'},
+  {c1:'#f59e0b',c2:'#f97316',c3:'#db2777',c4:'#7c3aed',type:'sunset'},
+  {c1:'#030712',c2:'#111827',c3:'#1e3a5f',c4:'#00ff87',type:'grid'},
+  {c1:'#374151',c2:'#6b7280',c3:'#9ca3af',c4:'#f9fafb',type:'soft'},
+  {c1:'#7c3aed',c2:'#db2777',c3:'#f59e0b',c4:'#fbbf24',type:'soft'},
+  {c1:'#92400e',c2:'#b45309',c3:'#d97706',c4:'#fef3c7',type:'warm'},
+  {c1:'#164e63',c2:'#0e7490',c3:'#06b6d4',c4:'#e0f2fe',type:'waves'},
+  {c1:'#0c4a6e',c2:'#0369a1',c3:'#38bdf8',c4:'#7dd3fc',type:'waves'},
+  {c1:'#1e1b4b',c2:'#4338ca',c3:'#7c3aed',c4:'#a78bfa',type:'geo'},
+];
+
+const SEED_POSTS=[
+  {userId:'u_alex',caption:'7am on the L train. Everyone lost in their own world. This is why I shoot street. 📷',themeIdx:0,likes:847,daysAgo:2},
+  {userId:'u_luna',caption:'Morning flow 🌅 Your body knows what it needs. Sometimes 20 minutes on the mat realigns everything. What does your morning practice look like? ✨',themeIdx:1,likes:2341,daysAgo:1},
+  {userId:'u_marco',caption:'Sunday sauce. Been simmering since 7am. Nonna would approve 🍅❤️ Patience is the secret ingredient. #ItalianFood',themeIdx:2,likes:1204,daysAgo:3},
+  {userId:'u_jade',caption:'PR day 🏋️‍♀️ 147kg deadlift and I am NOT done. What you did today is what matters. No excuses. #StrongWomen #Powerlifting',themeIdx:3,likes:3892,daysAgo:1},
+  {userId:'u_sam',caption:'Santorini at golden hour. No filter because reality was already surreal. Some places make you understand why people believe in magic. 🌅 #Greece',themeIdx:4,likes:8217,daysAgo:4},
+  {userId:'u_dev',caption:'When your side project accidentally gets more interesting than your actual job 😅 Week 3 of building in public. Ship it or it didn\'t happen.',themeIdx:5,likes:524,daysAgo:2},
+  {userId:'u_alex',caption:'Rain on glass. A stranger\'s silhouette. Sometimes the best shots happen when you\'re about to give up and go home.',themeIdx:6,likes:1893,daysAgo:5},
+  {userId:'u_luna',caption:'Gratitude is the highest vibration 💜 Name 3 things you\'re grateful for today ↓ I\'ll go first: warm tea, golden light, and this community 🥹',themeIdx:7,likes:4102,daysAgo:2},
+  {userId:'u_marco',caption:'Truffle pasta. Homemade, obviously. Yes it\'s as good as it looks. No I will not share the recipe... maybe. 😏 What do you want to see next?',themeIdx:8,likes:2847,daysAgo:6},
+  {userId:'u_jade',caption:'Rest day essentials 🛁 Recovery is training. Don\'t skip it. Your gains are literally built while you sleep.',themeIdx:9,likes:6721,daysAgo:3},
+  {userId:'u_sam',caption:'Woke up in Bali, going to sleep in Tokyo. This life is chaotic and absolutely worth it 🌏 Ask me anything about either place.',themeIdx:10,likes:11293,daysAgo:1},
+  {userId:'u_dev',caption:'Day 847 of trying to have a clean git history. Day 847 of git commit -m "fix stuff" 😭 Any devs here relate? #DevLife',themeIdx:11,likes:1843,daysAgo:4},
+];
+
+const SEED_COMMENTS=[
+  {postIdx:0,userId:'u_luna',text:'The loneliness in this is so beautiful 🌙'},
+  {postIdx:0,userId:'u_dev',text:'This is literally my commute lmao'},
+  {postIdx:1,userId:'u_jade',text:'YES. Morning movement is everything 💪'},
+  {postIdx:1,userId:'u_marco',text:'Bella! I do espresso, my version of meditation ☕'},
+  {postIdx:2,userId:'u_luna',text:'Can FEEL the love in this photo ✨'},
+  {postIdx:2,userId:'u_sam',text:'Had the best ragù in Bologna once... nothing has compared since'},
+  {postIdx:3,userId:'u_alex',text:'The strength in this photo 🔥'},
+  {postIdx:4,userId:'u_luna',text:'I felt this in my soul ✨🌙'},
+  {postIdx:4,userId:'u_marco',text:'Reminds me of the Amalfi Coast... mamma mia'},
+  {postIdx:5,userId:'u_alex',text:'Ship it! What are you building?'},
+  {postIdx:6,userId:'u_sam',text:'You captured the whole feeling of that hour'},
+  {postIdx:7,userId:'u_jade',text:'1. Getting stronger 2. My dog 3. This community 🐾'},
+  {postIdx:8,userId:'u_dev',text:'Would trade my entire codebase for one bite ngl'},
+  {postIdx:9,userId:'u_luna',text:'Recovery day self-care is essential ✨'},
+  {postIdx:10,userId:'u_alex',text:'The energy in your photos always... Tokyo or Bali series next?'},
+  {postIdx:11,userId:'u_sam',text:'git commit -m "i have no idea what im doing" is universal'},
+];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let S={
+  accounts:[],posts:[],follows:[],saved:[],dms:{},
+  activeId:null,view:'feed',profileId:null,activeConvId:null,
+  apiKey:'',initialized:false,storySeenIds:[],searchQuery:'',
+};
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+const uid=()=>crypto.randomUUID();
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function timeAgo(ts){
+  const diff=Date.now()-ts;
+  if(diff<60000)return'just now';
+  if(diff<3600000)return`${Math.floor(diff/60000)}m`;
+  if(diff<86400000)return`${Math.floor(diff/3600000)}h`;
+  if(diff<604800000)return`${Math.floor(diff/86400000)}d`;
+  return new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(ts);
+}
+function formatNum(n){if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}
+let toastTimer;
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3000);}
+
+function makeAvatar(username,color,size=160){
+  const c=document.createElement('canvas');c.width=size;c.height=size;
+  const ctx=c.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,size,size);
+  g.addColorStop(0,color);g.addColorStop(1,shiftColor(color,40));
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.25)';ctx.beginPath();ctx.arc(size*.35,size*.35,size*.35,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font=`bold ${Math.round(size*.38)}px -apple-system,Arial`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(username[0].toUpperCase(),size/2,size/2+2);
+  return c.toDataURL('image/png');
+}
+
+function shiftColor(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,(n>>16)+amt),g=Math.min(255,((n>>8)&0xff)+amt),b=Math.min(255,(n&0xff)+amt);
+  return`#${((r<<16)|(g<<8)|b).toString(16).padStart(6,'0')}`;
+}
+
+function generatePostImage(theme){
+  const size=600;const c=document.createElement('canvas');c.width=size;c.height=size;
+  const ctx=c.getContext('2d');const {c1,c2,c3,c4,type}=theme;
+  const g=ctx.createLinearGradient(0,0,size,size);
+  g.addColorStop(0,c1);g.addColorStop(.5,c2);g.addColorStop(1,c3);
+  ctx.fillStyle=g;ctx.fillRect(0,0,size,size);
+  if(type==='geo'){
+    for(let i=0;i<6;i++){
+      ctx.save();ctx.translate(Math.random()*size,Math.random()*size);
+      ctx.rotate(Math.random()*Math.PI);
+      ctx.fillStyle=c4+'33';ctx.fillRect(-30,-30,80+Math.random()*180,80+Math.random()*180);ctx.restore();
+    }
+  }else if(type==='soft'){
+    for(let i=0;i<9;i++){
+      const bg=ctx.createRadialGradient(Math.random()*size,Math.random()*size,10,size*.5,size*.5,size*.6);
+      bg.addColorStop(0,c4+'55');bg.addColorStop(1,'transparent');
+      ctx.fillStyle=bg;ctx.fillRect(0,0,size,size);
+    }
+  }else if(type==='warm'){
+    for(let i=0;i<5;i++){
+      ctx.beginPath();ctx.arc(Math.random()*size,Math.random()*size,50+Math.random()*130,0,Math.PI*2);
+      ctx.fillStyle=c4+'44';ctx.fill();
+    }
+  }else if(type==='grid'){
+    ctx.strokeStyle=c4+'55';ctx.lineWidth=1;
+    for(let x=0;x<size;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,size);ctx.stroke();}
+    for(let y=0;y<size;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y);ctx.stroke();}
+    ctx.shadowBlur=20;ctx.shadowColor=c4;
+    for(let i=0;i<15;i++){const x=Math.round(Math.random()*14)*40,y=Math.round(Math.random()*14)*40;ctx.fillStyle=c4;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}
+    ctx.shadowBlur=0;
+  }else if(type==='sunset'){
+    const bands=4;for(let i=0;i<bands;i++){const bg2=ctx.createLinearGradient(0,size*(i/bands),0,size*((i+1)/bands));bg2.addColorStop(0,c4+(i%2?'44':'22'));bg2.addColorStop(1,'transparent');ctx.fillStyle=bg2;ctx.fillRect(0,size*(i/bands),size,size/bands);}
+  }else if(type==='waves'){
+    ctx.strokeStyle=c4+'88';ctx.lineWidth=2;
+    for(let i=0;i<8;i++){ctx.beginPath();ctx.moveTo(0,size*(i/8));for(let x=0;x<size;x+=10){ctx.lineTo(x,size*(i/8)+Math.sin(x*.04+i)*28);}ctx.stroke();}
+  }
+  const vig=ctx.createRadialGradient(size/2,size/2,size*.25,size/2,size/2,size*.8);
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,.5)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,size,size);
+  return c.toDataURL('image/jpeg',.88);
+}
+
+// ═══════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════
+function hydrate(){
+  try{
+    const raw=localStorage.getItem(SK);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    Object.assign(S,d);
+    if(!Array.isArray(S.accounts))S.accounts=[];
+    if(!Array.isArray(S.posts))S.posts=[];
+    if(!Array.isArray(S.follows))S.follows=[];
+    if(!Array.isArray(S.saved))S.saved=[];
+    if(!S.dms||typeof S.dms!=='object')S.dms={};
+    if(!Array.isArray(S.storySeenIds))S.storySeenIds=[];
+  }catch{localStorage.removeItem(SK);}
+}
+function persist(){
+  try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){console.warn('Storage full, clearing images...');}
+}
+
+async function seed(){
+  // Generate fake user accounts
+  for(const fu of FAKE_USERS){
+    if(!S.accounts.find(a=>a.id===fu.id)){
+      S.accounts.push({
+        id:fu.id,username:fu.username,displayName:fu.displayName,
+        bio:fu.bio,color:fu.color,
+        avatarUrl:makeAvatar(fu.username,fu.color,200),
+        followers:fu.followers,following:fu.following,
+        fake:true,createdAt:NOW-Math.random()*DAY*60,
+      });
+    }
+  }
+  // Create a default user account
+  if(!S.accounts.find(a=>a.id==='u_me')){
+    S.accounts.push({
+      id:'u_me',username:'yourhandle',displayName:'Your Name',
+      bio:'Welcome to your Instagram clone! ✨\nChange your profile in Settings.',
+      color:'#f5c518',avatarUrl:makeAvatar('Y','#f5c518',200),
+      followers:0,following:0,fake:false,createdAt:NOW,
+    });
+  }
+  if(!S.activeId)S.activeId='u_me';
+  // Generate posts
+  if(S.posts.length===0){
+    const imgs=POST_THEMES.map(t=>generatePostImage(t));
+    for(let i=0;i<SEED_POSTS.length;i++){
+      const sp=SEED_POSTS[i];
+      const post={
+        id:uid(),accountId:sp.userId,imageUrl:imgs[sp.themeIdx],
+        caption:sp.caption,comments:[],likes:generateFakeLikes(sp.likes,sp.userId),
+        createdAt:NOW-(sp.daysAgo*DAY)-(Math.random()*DAY*.5),
+      };
+      S.posts.push(post);
+    }
+    // Add comments
+    for(const sc of SEED_COMMENTS){
+      if(sc.postIdx<S.posts.length){
+        S.posts[sc.postIdx].comments.push({
+          id:uid(),fromId:sc.userId,text:sc.text,
+          createdAt:NOW-(Math.random()*DAY*2),likes:[],
+        });
+      }
+    }
+  }
+  // Default follows (active user follows all fake users)
+  for(const fu of FAKE_USERS){
+    if(!S.follows.find(f=>f.followerId==='u_me'&&f.followingId===fu.id)){
+      S.follows.push({followerId:'u_me',followingId:fu.id});
+    }
+  }
+  S.initialized=true;
+}
+
+function generateFakeLikes(count,postUserId){
+  const ids=FAKE_USERS.filter(f=>f.id!==postUserId).map(f=>f.id).slice(0,Math.min(3,count));
+  return ids;
+}
+
+// ═══════════════════════════════════════════════════
+// GETTERS
+// ═══════════════════════════════════════════════════
+const getAccount=id=>S.accounts.find(a=>a.id===id)||null;
+const getActive=()=>getAccount(S.activeId);
+const isFollowing=targetId=>S.follows.some(f=>f.followerId===S.activeId&&f.followingId===targetId);
+const isLiked=post=>Array.isArray(post.likes)&&post.likes.includes(S.activeId);
+const isSaved=postId=>S.saved.includes(postId);
+const getFakeUser=id=>FAKE_USERS.find(f=>f.id===id)||null;
+const getConv=id=>{if(!S.dms[id])S.dms[id]=[];return S.dms[id];}
+function getAvatar(account){return account?.avatarUrl||makeAvatar(account?.username||'?','#555',80);}
+function getFeedPosts(){
+  const followingIds=[...S.follows.filter(f=>f.followerId===S.activeId).map(f=>f.followingId),'u_me',S.activeId];
+  const unique=[...new Set(followingIds)];
+  return S.posts.filter(p=>unique.includes(p.accountId)).sort((a,b)=>b.createdAt-a.createdAt);
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: ROOT
+// ═══════════════════════════════════════════════════
+function render(){
+  renderSidebar();
+  renderMain();
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: SIDEBAR
+// ═══════════════════════════════════════════════════
+function renderSidebar(){
+  const active=getActive();
+  const views=['feed','explore','reels','dm','profile'];
+  const v=S.view;
+  document.getElementById('root').innerHTML=`
+  <aside class="sidebar">
+    <div class="sidebar-logo">Instagram</div>
+    <nav style="display:grid;gap:2px">
+      ${navItem('feed','Home',v==='feed'?'homeFilled':'home')}
+      ${navItem('explore','Explore',v==='explore'?'explore':'explore')}
+      ${navItem('reels','Reels',v==='reels'?'reels':'reels')}
+      ${navItem('dm','Messages',v==='dm'?'messages':'messages')}
+      <button class="nav-item${v==='create'?' active':''}" onclick="openCreateModal()" style="gap:16px;width:100%">
+        ${svg('create','nav-icon')}<span>Create</span>
+      </button>
+      ${navItem('profile','Profile','profile')}
+    </nav>
+    <div class="sidebar-gap"></div>
+    <button class="nav-item" onclick="openSettingsModal()">
+      ${svg('settings','nav-icon')}<span>Settings</span>
+    </button>
+  </aside>
+  <main class="main" id="main-area"></main>`;
+  document.querySelectorAll('.nav-item[data-view]').forEach(btn=>{
+    btn.addEventListener('click',()=>setView(btn.dataset.view));
+  });
+  renderMainContent();
+}
+
+function navItem(view,label,icon){
+  const active=S.view===view;
+  return`<button class="nav-item${active?' active':''}" data-view="${view}">
+    ${svg(icon,'nav-icon')}<span>${label}</span>
+  </button>`;
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: MAIN
+// ═══════════════════════════════════════════════════
+function renderMain(){renderMainContent();}
+function renderMainContent(){
+  const main=document.getElementById('main-area');if(!main)return;
+  if(S.view==='feed')renderFeed(main);
+  else if(S.view==='explore')renderExplore(main);
+  else if(S.view==='reels')renderReels(main);
+  else if(S.view==='dm')renderDMs(main);
+  else if(S.view==='profile')renderProfile(main,S.profileId||S.activeId);
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: FEED
+// ═══════════════════════════════════════════════════
+function renderFeed(container){
+  const posts=getFeedPosts();
+  const active=getActive();
+  const fakeUsers=FAKE_USERS.filter(fu=>!isFollowing(fu.id)&&fu.id!==S.activeId);
+  container.innerHTML=`
+  <div class="content-wrap">
+    <div class="feed-col">
+      ${renderStoriesBar()}
+      ${posts.length?posts.map(p=>renderPostCard(p)).join(''):`<div class="empty-state"><span class="empty-icon">📷</span><p>No posts yet! Follow people or create your first post.</p></div>`}
     </div>
-
-    <section id="reels-overlay" class="reels-overlay hidden" aria-label="Reels view">
-      <button id="close-reels" class="reel-close" type="button">Back</button>
-      <article id="reel-stage" class="reel-stage"></article>
-      <button id="next-reel" class="reel-next" type="button" aria-label="Next reel">↓</button>
-    </section>
-
-    <template id="post-template">
-      <article class="post" tabindex="0">
-        <header class="post-head">
-          <div class="user-line">
-            <button type="button" class="user-trigger">
-              <img class="avatar" alt="Profile picture" />
-            </button>
-            <div>
-              <button type="button" class="post-user user-trigger-text"></button>
-              <p class="post-time muted small"></p>
-            </div>
+    <aside class="right-col">
+      ${active?`<div class="active-row">
+        <img class="active-av" src="${getAvatar(active)}" onclick="viewProfile('${active.id}')">
+        <div class="active-info"><div class="active-name">${esc(active.username)}</div><div class="active-handle">${esc(active.displayName||'')}</div></div>
+        <button class="switch-btn" onclick="openSettingsModal()">Switch</button>
+      </div>`:''}
+      <div class="sugg-hdr"><span class="sugg-title">Suggested for you</span><button class="see-all">See all</button></div>
+      ${fakeUsers.slice(0,5).map(fu=>{
+        const acc=getAccount(fu.id);if(!acc)return'';
+        return`<div class="sugg-item">
+          <img class="sugg-av" src="${getAvatar(acc)}" onclick="viewProfile('${fu.id}')">
+          <div class="sugg-info">
+            <button class="sugg-name" onclick="viewProfile('${fu.id}')">${esc(fu.username)}</button>
+            <div class="sugg-meta">Suggested for you</div>
           </div>
-        </header>
-        <img class="post-image" alt="Posted photo" />
-        <div class="post-actions">
-          <button type="button" class="action-btn like-btn">♡ Like</button>
-          <button type="button" class="action-btn comment-btn">💬 Comment</button>
-        </div>
-        <p class="post-caption"></p>
-        <footer class="post-footer">
-          <span class="post-likes-count muted small"></span>
-          <span class="post-comments-count muted small"></span>
-        </footer>
-      </article>
-    </template>
+          <button class="follow-btn${isFollowing(fu.id)?' following':''}" onclick="toggleFollow('${fu.id}');render()">${isFollowing(fu.id)?'Following':'Follow'}</button>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:24px;font-size:12px;color:var(--muted);line-height:1.8">
+        About · Help · Press · API · Jobs · Privacy · Terms · Locations<br>
+        <span style="font-size:11px;margin-top:8px;display:block">© 2025 Instagram Clone</span>
+      </div>
+    </aside>
+  </div>`;
+  attachFeedEvents();
+}
 
-    <dialog id="post-modal" class="post-modal">
-      <article class="modal-content">
-        <button id="close-modal" class="close" type="button" aria-label="Close">×</button>
-        <img id="modal-image" class="modal-image" alt="Selected post" />
-        <div class="modal-meta">
-          <div class="user-line">
-            <button type="button" id="modal-user-trigger" class="user-trigger">
-              <img id="modal-avatar" class="avatar" alt="Profile picture" />
-            </button>
-            <div>
-              <button type="button" id="modal-user" class="user-trigger-text"></button>
-              <p id="modal-time" class="muted small"></p>
-            </div>
+function renderStoriesBar(){
+  const storyUsers=S.accounts.filter(a=>FAKE_USERS.find(f=>f.id===a.id)||a.id===S.activeId);
+  const me=getActive();
+  return`<div class="stories-bar">
+    <button class="story-item your-story-add" onclick="openCreateModal()">
+      <div class="story-ring ${S.storySeenIds.includes(S.activeId)?'seen':''}">
+        <img class="story-avatar" src="${getAvatar(me)}">
+      </div>
+      <div class="story-plus">+</div>
+      <span class="story-name">Your story</span>
+    </button>
+    ${FAKE_USERS.map(fu=>{
+      const acc=getAccount(fu.id);if(!acc)return'';
+      const seen=S.storySeenIds.includes(fu.id);
+      return`<button class="story-item" onclick="openStory('${fu.id}')">
+        <div class="story-ring${seen?' seen':''}"><img class="story-avatar" src="${getAvatar(acc)}"></div>
+        <span class="story-name">${esc(fu.username)}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderPostCard(post){
+  const acc=getAccount(post.accountId);if(!acc)return'';
+  const liked=isLiked(post);const saved=isSaved(post.id);
+  const fakeUser=getFakeUser(post.accountId);
+  const following=isFollowing(post.accountId);
+  const likesCount=Array.isArray(post.likes)?post.likes.length:0;
+  return`<div class="post-card" data-post-id="${post.id}">
+    <div class="post-header">
+      <img class="post-av" src="${getAvatar(acc)}" onclick="viewProfile('${post.accountId}')">
+      <div class="post-user-info">
+        <button class="post-username" onclick="viewProfile('${post.accountId}')">${esc(acc.username)}</button>
+        <span class="post-dot">•</span>
+        <span class="post-time">${timeAgo(post.createdAt)}</span>
+        ${fakeUser&&!following?`<button class="post-follow" onclick="toggleFollow('${post.accountId}');render()">Follow</button>`:''}
+      </div>
+      <button class="post-more">${svg('dots')}</button>
+    </div>
+    <img class="post-img" src="${post.imageUrl}" onclick="openPostModal('${post.id}')">
+    <div class="post-actions">
+      <button class="act-btn${liked?' liked':''}" onclick="toggleLike('${post.id}')" title="Like">
+        ${liked?I.heartFilled:I.heart}
+      </button>
+      <button class="act-btn" onclick="openPostModal('${post.id}')" title="Comment">
+        ${I.comment}
+      </button>
+      <button class="act-btn" onclick="showToast('Link copied!')" title="Share">
+        ${I.share}
+      </button>
+      <button class="act-btn act-save${saved?' saved':''}" onclick="toggleSave('${post.id}')" title="Save">
+        ${saved?I.bookmarkFilled:I.bookmark}
+      </button>
+    </div>
+    ${likesCount>0?`<div class="post-likes">${formatNum(likesCount)} like${likesCount!==1?'s':''}</div>`:''}
+    ${post.caption?`<div class="post-caption"><span class="cap-user" onclick="viewProfile('${post.accountId}')">${esc(acc.username)}</span>${esc(post.caption)}</div>`:''}
+    ${post.comments.length>1?`<button class="post-view-comments" onclick="openPostModal('${post.id}')">View all ${post.comments.length} comments</button>`:''}
+    ${post.comments.length===1?`<div class="post-caption"><span class="cap-user">${esc(getAccount(post.comments[0].fromId)?.username||'user')}</span>${esc(post.comments[0].text)}</div>`:''}
+    <div class="post-add-comment">
+      <input class="post-comment-input" placeholder="Add a comment…" data-post="${post.id}" oninput="this.nextElementSibling.classList.toggle('on',this.value.trim().length>0)">
+      <button class="post-post-btn" onclick="quickComment(this.previousElementSibling)">Post</button>
+    </div>
+  </div>`;
+}
+
+function attachFeedEvents(){}
+
+// ═══════════════════════════════════════════════════
+// RENDER: EXPLORE
+// ═══════════════════════════════════════════════════
+function renderExplore(container){
+  const posts=[...S.posts].sort(()=>Math.random()-.5);
+  container.innerHTML=`<div style="width:100%;max-width:935px;padding:0">
+    <div class="explore-search-bar">
+      <input class="explore-search" placeholder="Search" value="${esc(S.searchQuery)}" oninput="S.searchQuery=this.value;renderMain()">
+    </div>
+    <div class="explore-grid">
+      ${posts.filter(p=>!S.searchQuery||getAccount(p.accountId)?.username.includes(S.searchQuery.toLowerCase())||p.caption.toLowerCase().includes(S.searchQuery.toLowerCase()))
+        .map((p,i)=>{
+          const likeCount=Array.isArray(p.likes)?p.likes.length:0;
+          return`<div class="exp-tile${i%7===2?' tall':''}" onclick="openPostModal('${p.id}')">
+            <img src="${p.imageUrl}" loading="lazy">
+            <div class="exp-tile-overlay"><div class="exp-like-count">${svg('heart')} ${formatNum(likeCount)}</div></div>
+          </div>`;
+        }).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: REELS
+// ═══════════════════════════════════════════════════
+function renderReels(container){
+  const posts=S.posts.length?S.posts:[];
+  if(!posts.length){container.innerHTML=`<div class="empty-state"><span class="empty-icon">🎬</span><p>No reels yet. Create some posts!</p></div>`;return;}
+  container.innerHTML=`<div class="reels-wrap" id="reels-wrap" style="overflow-y:auto;height:100vh;scroll-snap-type:y mandatory;scrollbar-width:none">
+    ${posts.map(p=>{
+      const acc=getAccount(p.accountId);if(!acc)return'';
+      const liked=isLiked(p);const likeCount=Array.isArray(p.likes)?p.likes.length:0;
+      return`<div class="reel-card" style="scroll-snap-align:start;flex-shrink:0;margin:12px auto;display:block" onclick="openPostModal('${p.id}')">
+        <img class="reel-img" src="${p.imageUrl}">
+        <div class="reel-overlay">
+          <div class="reel-user-row">
+            <img class="reel-av" src="${getAvatar(acc)}">
+            <span class="reel-username">${esc(acc.username)}</span>
+            <button class="reel-follow-btn" onclick="event.stopPropagation();toggleFollow('${p.accountId}');render()">${isFollowing(p.accountId)?'Following':'Follow'}</button>
           </div>
-          <p id="modal-caption"></p>
-          <h4>Comments</h4>
-          <ul id="modal-comments" class="comment-list"></ul>
-          <form id="comment-form" class="stack">
-            <input id="comment-input" name="comment" type="text" maxlength="180" placeholder="Write a comment..." required />
-            <button type="submit">Add comment</button>
-          </form>
+          <p class="reel-caption">${esc(p.caption.substring(0,80))}${p.caption.length>80?'…':''}</p>
         </div>
-      </article>
-    </dialog>
+        <div class="reel-actions">
+          <button class="reel-act${liked?' liked':''}" onclick="event.stopPropagation();toggleLike('${p.id}');render()">
+            <svg viewBox="0 0 24 24" fill="${liked?'#ed4956':'none'}" stroke="${liked?'#ed4956':'#fff'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            ${formatNum(likeCount)}
+          </button>
+          <button class="reel-act" onclick="event.stopPropagation();openPostModal('${p.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            ${p.comments.length}
+          </button>
+          <button class="reel-act" onclick="event.stopPropagation();showToast('Shared!')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Share
+          </button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
 
-    <dialog id="crop-dialog" class="crop-dialog">
-      <section class="crop-panel">
-        <h3 id="crop-title">Crop image</h3>
-        <div id="crop-viewport" class="crop-viewport">
-          <img id="crop-image" alt="Crop preview" />
-        </div>
-        <label class="small">Zoom <input id="crop-zoom" type="range" min="1" max="3" step="0.01" value="1" /></label>
-        <div class="inline-actions">
-          <button type="button" id="cancel-crop" class="ghost">Cancel</button>
-          <button type="button" id="apply-crop">Apply Crop</button>
-        </div>
-      </section>
-    </dialog>
+// ═══════════════════════════════════════════════════
+// RENDER: DMs
+// ═══════════════════════════════════════════════════
+function renderDMs(container){
+  const active=getActive();
+  const hasKey=!!S.apiKey;
+  container.innerHTML=`<div class="dm-wrap">
+    <div class="dm-list">
+      <div class="dm-list-hdr">
+        <span class="dm-hdr-name">${esc(active?.username||'Messages')}</span>
+        <button class="dm-hdr-btn" onclick="showToast('New message')" title="New message">${svg('newmsg')}</button>
+      </div>
+      <div class="dm-conv-list">
+        ${FAKE_USERS.map(fu=>{
+          const acc=getAccount(fu.id);if(!acc)return'';
+          const conv=getConv(fu.id);
+          const lastMsg=conv[conv.length-1];
+          const isActive=S.activeConvId===fu.id;
+          return`<button class="dm-conv-item${isActive?' active':''}" onclick="openConv('${fu.id}')">
+            <div style="position:relative;flex-shrink:0">
+              <img class="dm-conv-av" src="${getAvatar(acc)}">
+              <div class="dm-ai-dot"></div>
+            </div>
+            <div class="dm-conv-meta">
+              <div class="dm-conv-name">${esc(fu.username)}<span class="dm-ai-badge">AI</span></div>
+              <div class="dm-conv-preview">${lastMsg?esc(lastMsg.text.substring(0,40)+(lastMsg.text.length>40?'…':'')):'Say hi!'}</div>
+            </div>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="dm-chat" id="dm-chat-area">
+      ${S.activeConvId?renderChatArea(S.activeConvId):renderEmptyChat()}
+    </div>
+  </div>`;
+  setupDmInput();
+}
 
-    <script src="app.js"></script>
-  </body>
+function renderEmptyChat(){
+  return`<div class="dm-empty-chat">
+    <div class="dm-empty-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+    <div class="dm-empty-title">Your messages</div>
+    <div class="dm-empty-sub">Choose a conversation from the list to start chatting with AI personas</div>
+  </div>`;
+}
+
+function renderChatArea(convId){
+  const fu=getFakeUser(convId);const acc=getAccount(convId);
+  if(!fu||!acc)return renderEmptyChat();
+  const conv=getConv(convId);
+  const hasKey=!!S.apiKey;
+  return`
+    <div class="dm-chat-hdr">
+      <img class="dm-chat-av" src="${getAvatar(acc)}">
+      <div>
+        <div class="dm-chat-name">${esc(acc.username)}</div>
+        <div class="dm-chat-sub">AI Persona • Active now</div>
+      </div>
+      <button onclick="viewProfile('${convId}')" style="margin-left:auto;background:none;border:none;color:var(--text);padding:4px;border-radius:4px" title="View profile">${svg('profile')}</button>
+    </div>
+    ${!hasKey?`<div class="dm-notice">⚙️ Add your Anthropic API key in <button onclick="openSettingsModal()" style="background:none;border:none;color:#80caff;font-weight:600;cursor:pointer;padding:0">Settings</button> to enable AI responses.</div>`:''}
+    <div class="dm-messages" id="dm-messages">
+      ${conv.length===0?`<div style="text-align:center;color:var(--muted);font-size:14px;margin:auto">Start a conversation with ${esc(acc.username)}!</div>`:''}
+      ${conv.map(m=>`<div class="dm-msg ${m.role==='user'?'sent':'recv'}">${esc(m.text)}</div>`).join('')}
+    </div>
+    <div class="dm-input-area">
+      <input class="dm-input" id="dm-text-input" placeholder="Message ${esc(acc.username)}…" oninput="document.getElementById('dm-send-btn').classList.toggle('on',this.value.trim().length>0)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleDmSend()}">
+      <button class="dm-send" id="dm-send-btn" onclick="handleDmSend()">Send</button>
+    </div>`;
+}
+
+function setupDmInput(){setTimeout(()=>{const msgs=document.getElementById('dm-messages');if(msgs)msgs.scrollTop=msgs.scrollHeight;},50);}
+
+function openConv(userId){S.activeConvId=userId;persist();renderDMs(document.getElementById('main-area'));}
+
+async function handleDmSend(){
+  const input=document.getElementById('dm-text-input');
+  if(!input)return;
+  const text=input.value.trim();
+  if(!text||!S.activeConvId)return;
+  input.value='';
+  document.getElementById('dm-send-btn')?.classList.remove('on');
+  const conv=getConv(S.activeConvId);
+  conv.push({role:'user',text,ts:Date.now()});
+  persist();
+  refreshDmMessages();
+  // Show typing indicator
+  const msgs=document.getElementById('dm-messages');
+  if(msgs){
+    const typing=document.createElement('div');
+    typing.className='dm-msg typing-msg';typing.id='typing-indicator';
+    typing.innerHTML=`<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+    msgs.appendChild(typing);msgs.scrollTop=msgs.scrollHeight;
+  }
+  if(!S.apiKey){
+    setTimeout(()=>{
+      document.getElementById('typing-indicator')?.remove();
+      const fu=getFakeUser(S.activeConvId);
+      conv.push({role:'assistant',text:`(Add your API key in Settings to chat with ${fu?.username||'me'} using AI! 🤖)`,ts:Date.now()});
+      persist();refreshDmMessages();
+    },1500);
+    return;
+  }
+  // Call Claude API
+  try{
+    const fu=getFakeUser(S.activeConvId);
+    const history=conv.slice(-20).map(m=>({role:m.role==='user'?'user':'assistant',content:m.text}));
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':S.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,system:fu?.persona||'You are a friendly Instagram user.',messages:history})
+    });
+    const data=await resp.json();
+    document.getElementById('typing-indicator')?.remove();
+    if(data.content&&data.content[0]){
+      conv.push({role:'assistant',text:data.content[0].text,ts:Date.now()});
+    }else{
+      conv.push({role:'assistant',text:'(no response)',ts:Date.now()});
+    }
+  }catch(e){
+    document.getElementById('typing-indicator')?.remove();
+    conv.push({role:'assistant',text:'(Something went wrong. Check your API key in Settings.)',ts:Date.now()});
+  }
+  persist();refreshDmMessages();
+}
+
+function refreshDmMessages(){
+  const msgs=document.getElementById('dm-messages');if(!msgs)return;
+  const conv=getConv(S.activeConvId||'');
+  msgs.innerHTML=conv.map(m=>`<div class="dm-msg ${m.role==='user'?'sent':'recv'}">${esc(m.text)}</div>`).join('');
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER: PROFILE
+// ═══════════════════════════════════════════════════
+function renderProfile(container,userId){
+  const acc=getAccount(userId);if(!acc){container.innerHTML='<div class="empty-state">Profile not found</div>';return;}
+  const posts=S.posts.filter(p=>p.accountId===userId).sort((a,b)=>b.createdAt-a.createdAt);
+  const fu=getFakeUser(userId);
+  const followers=fu?fu.followers+S.follows.filter(f=>f.followingId===userId).length:S.follows.filter(f=>f.followingId===userId).length;
+  const following=fu?fu.following:S.follows.filter(f=>f.followerId===userId).length;
+  const isMe=userId===S.activeId;
+  const isFollow=isFollowing(userId);
+  container.innerHTML=`<div class="profile-wrap">
+    <div class="profile-top">
+      <div class="profile-av-ring"><img class="profile-av-img" src="${getAvatar(acc)}"></div>
+      <div class="profile-right">
+        <div class="profile-name-row">
+          <h2 class="profile-uname">${esc(acc.username)}</h2>
+          ${isMe?`<div class="profile-action-btns"><button class="profile-btn" onclick="openSettingsModal()">Edit profile</button></div>`:
+            `<div class="profile-action-btns">
+              <button class="profile-btn${isFollow?' following':' primary'}" onclick="toggleFollow('${userId}');renderMain()">${isFollow?'Following':'Follow'}</button>
+              <button class="profile-btn" onclick="S.view='dm';S.activeConvId='${userId}';persist();render()">Message</button>
+            </div>`}
+        </div>
+        <div class="profile-stats">
+          <div class="stat"><span class="stat-num">${posts.length}</span><span class="stat-lbl">posts</span></div>
+          <div class="stat"><span class="stat-num">${formatNum(followers)}</span><span class="stat-lbl">followers</span></div>
+          <div class="stat"><span class="stat-num">${formatNum(following)}</span><span class="stat-lbl">following</span></div>
+        </div>
+        <div class="profile-bio">${esc(acc.bio||'')}</div>
+      </div>
+    </div>
+    <div class="profile-tabs">
+      <button class="profile-tab active">${svg('grid')} Posts</button>
+      <button class="profile-tab">${svg('tag')} Tagged</button>
+    </div>
+    <div class="profile-posts-grid">
+      ${posts.length?posts.map(p=>`<div class="profile-tile" onclick="openPostModal('${p.id}')"><img src="${p.imageUrl}" loading="lazy"></div>`).join('')
+        :`<div class="empty-state"><span class="empty-icon">📷</span><p>No posts yet</p></div>`}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+function clearModal(){document.getElementById('modal-root').innerHTML='';}
+function wrapModal(content,onClose){
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="overlay" id="modal-overlay">${content}<button class="modal-close-btn" onclick="clearModal()">${I.close}</button></div>`;
+  root.querySelector('#modal-overlay').addEventListener('click',e=>{if(e.target.id==='modal-overlay')clearModal();});
+  if(onClose)root.querySelector('.overlay').addEventListener('custom-close',onClose);
+}
+
+function openPostModal(postId){
+  const post=S.posts.find(p=>p.id===postId);if(!post)return;
+  const acc=getAccount(post.accountId);if(!acc)return;
+  const liked=isLiked(post);const saved=isSaved(postId);
+  const likeCount=Array.isArray(post.likes)?post.likes.length:0;
+  wrapModal(`<div class="post-modal">
+    <div class="pm-img-side"><img src="${post.imageUrl}"></div>
+    <div class="pm-meta-side">
+      <div class="pm-hdr">
+        <img class="pm-av" src="${getAvatar(acc)}" onclick="clearModal();viewProfile('${acc.id}')">
+        <button class="pm-username" onclick="clearModal();viewProfile('${acc.id}')">${esc(acc.username)}</button>
+        <button class="post-more" style="margin-left:auto">${svg('dots')}</button>
+      </div>
+      <div class="pm-comments" id="pm-comments-list">
+        ${post.caption?`<div class="pm-comment"><strong onclick="clearModal();viewProfile('${acc.id}')">${esc(acc.username)}</strong>${esc(post.caption)}<time>${timeAgo(post.createdAt)}</time></div>`:''}
+        ${post.comments.map(c=>{const ca=getAccount(c.fromId);return`<div class="pm-comment"><strong onclick="clearModal();viewProfile('${c.fromId||''}')">${esc(ca?.username||'user')}</strong>${esc(c.text)}<time>${timeAgo(c.createdAt)}</time></div>`;}).join('')}
+      </div>
+      <div class="pm-actions">
+        <button class="act-btn${liked?' liked':''}" id="pm-like-btn" onclick="toggleLikeModal('${postId}')" title="Like">${liked?I.heartFilled:I.heart}</button>
+        <button class="act-btn" onclick="document.getElementById('pm-comment-input').focus()" title="Comment">${I.comment}</button>
+        <button class="act-btn" onclick="showToast('Shared!')" title="Share">${I.share}</button>
+        <button class="act-btn act-save${saved?' saved':''}" onclick="toggleSave('${postId}');this.classList.toggle('saved')" title="Save">${saved?I.bookmarkFilled:I.bookmark}</button>
+      </div>
+      <div class="pm-likes" id="pm-likes-count">${formatNum(likeCount)} like${likeCount!==1?'s':''}</div>
+      ${post.caption?`<div class="pm-caption"><strong onclick="clearModal();viewProfile('${acc.id}')">${esc(acc.username)}</strong>${esc(post.caption)}</div>`:''}
+      <div class="pm-add-comment">
+        <input class="pm-comment-input" id="pm-comment-input" placeholder="Add a comment…" oninput="document.getElementById('pm-post-btn').classList.toggle('on',this.value.trim().length>0)" onkeydown="if(event.key==='Enter'){document.getElementById('pm-post-btn').click()}">
+        <button class="pm-post-btn" id="pm-post-btn" onclick="addCommentModal('${postId}')">Post</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function toggleLikeModal(postId){
+  const post=S.posts.find(p=>p.id===postId);if(!post)return;
+  toggleLike(postId);
+  const liked=isLiked(post);
+  const btn=document.getElementById('pm-like-btn');
+  if(btn){btn.innerHTML=liked?I.heartFilled:I.heart;btn.classList.toggle('liked',liked);}
+  const lc=document.getElementById('pm-likes-count');
+  if(lc){const n=Array.isArray(post.likes)?post.likes.length:0;lc.textContent=`${formatNum(n)} like${n!==1?'s':''}`;}
+}
+
+function addCommentModal(postId){
+  const input=document.getElementById('pm-comment-input');if(!input)return;
+  const text=input.value.trim();if(!text)return;
+  addComment(postId,text);
+  input.value='';
+  document.getElementById('pm-post-btn')?.classList.remove('on');
+  const post=S.posts.find(p=>p.id===postId);
+  const list=document.getElementById('pm-comments-list');
+  if(list&&post){
+    const newC=post.comments[post.comments.length-1];
+    const ca=getAccount(newC.fromId);
+    const div=document.createElement('div');div.className='pm-comment';
+    div.innerHTML=`<strong>${esc(ca?.username||'user')}</strong>${esc(newC.text)}<time>just now</time>`;
+    list.appendChild(div);div.scrollIntoView({behavior:'smooth'});
+  }
+}
+
+function openStory(userId){
+  const fu=getFakeUser(userId);const acc=getAccount(userId);if(!acc)return;
+  const posts=S.posts.filter(p=>p.accountId===userId);
+  if(!posts.length){showToast(`${acc.username} has no stories yet`);return;}
+  const post=posts[Math.floor(Math.random()*posts.length)];
+  wrapModal(`<div class="story-modal">
+    <img src="${post.imageUrl}">
+    <div class="story-modal-hdr">
+      <div class="story-progress"><div class="story-progress-bar" onanimationend="clearModal()"></div></div>
+      <div class="story-modal-user">
+        <img class="story-modal-av" src="${getAvatar(acc)}">
+        <div>
+          <div class="story-modal-name">${esc(acc.username)}</div>
+          <div class="story-modal-time">${timeAgo(post.createdAt)}</div>
+        </div>
+      </div>
+    </div>
+  </div>`);
+  if(!S.storySeenIds.includes(userId)){S.storySeenIds.push(userId);persist();}
+}
+
+let cropState={file:null,img:null,zoom:1,x:0,y:0,dragging:false,dx:0,dy:0,base:1,postCaption:''};
+let pendingImageUrl=null;
+
+function openCreateModal(){
+  wrapModal(`<div class="create-modal">
+    <div class="create-hdr">
+      <button onclick="clearModal()" style="background:none;border:none;color:var(--text);font-size:14px">Cancel</button>
+      <div class="create-title">Create new post</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="create-body" id="create-body">
+      <div class="upload-area">
+        <div class="upload-icon">🖼️</div>
+        <p style="font-size:16px;margin-bottom:8px">Drag photos and videos here</p>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:16px">or</p>
+        <button onclick="this.previousElementSibling.previousElementSibling.previousElementSibling.click()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-weight:600">Select from computer</button>
+        <input type="file" accept="image/*" onchange="handleCreateImageSelected(this.files[0])">
+      </div>
+    </div>
+  </div>`);
+}
+
+function handleCreateImageSelected(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const url=e.target.result;
+    pendingImageUrl=url;
+    const body=document.getElementById('create-body');
+    if(!body)return;
+    body.innerHTML=`
+      <div style="text-align:center;margin-bottom:16px">
+        <img src="${url}" style="max-width:100%;max-height:300px;border-radius:8px;object-fit:cover">
+      </div>
+      <div class="caption-area" style="padding:0">
+        <textarea class="caption-textarea" id="new-post-caption" placeholder="Write a caption…" rows="3"></textarea>
+      </div>
+      <div class="create-footer" style="padding:12px 0 0;border:none">
+        <button class="share-btn" onclick="submitNewPost()">Share</button>
+      </div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitNewPost(){
+  if(!pendingImageUrl||!S.activeId)return;
+  const caption=document.getElementById('new-post-caption')?.value||'';
+  S.posts.unshift({id:uid(),accountId:S.activeId,imageUrl:pendingImageUrl,caption,comments:[],likes:[],createdAt:Date.now()});
+  pendingImageUrl=null;persist();clearModal();render();showToast('Post shared! ✨');
+}
+
+function openSettingsModal(){
+  const active=getActive();
+  wrapModal(`<div class="settings-modal">
+    <div class="settings-hdr">⚙️ Settings</div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-label">AI DM — Anthropic API Key</div>
+        <input class="settings-input" id="api-key-input" type="password" placeholder="sk-ant-..." value="${esc(S.apiKey)}">
+        <div class="settings-hint">Used only for AI persona DMs. Stored locally in your browser. Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.</div>
+        <button class="settings-save" style="margin-top:10px" onclick="saveApiKey()">Save API Key</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Accounts</div>
+        <div class="accounts-section">
+          ${S.accounts.filter(a=>!a.fake).map(a=>`<button class="acc-item" onclick="switchAccount('${a.id}')">
+            <img class="acc-av" src="${getAvatar(a)}">
+            <div class="acc-info"><div class="acc-name">${esc(a.username)}</div><div class="acc-handle">${esc(a.displayName||'')}</div></div>
+            ${a.id===S.activeId?`<span class="acc-check">✓</span>`:''}
+          </button>`).join('')}
+        </div>
+        <div class="settings-label" style="margin-top:16px">Add Account</div>
+        <div class="new-acc-form">
+          <input class="new-acc-input" id="new-username" placeholder="Username" maxlength="24">
+          <input class="new-acc-input" id="new-displayname" placeholder="Display name">
+          <button class="new-acc-btn" onclick="addNewAccount()">Add account</button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-label">Data</div>
+        <button onclick="resetData()" style="background:var(--s3);border:1px solid var(--border);color:var(--like);border-radius:8px;padding:8px 16px;font-weight:600;font-size:14px">Reset all data</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function saveApiKey(){S.apiKey=document.getElementById('api-key-input')?.value||'';persist();clearModal();showToast('API key saved ✓');}
+
+function addNewAccount(){
+  const u=(document.getElementById('new-username')?.value||'').trim().toLowerCase().replace(/[^a-z0-9._]/g,'');
+  const d=(document.getElementById('new-displayname')?.value||'').trim();
+  if(!u){showToast('Enter a username');return;}
+  if(S.accounts.find(a=>a.username===u)){showToast('Username taken');return;}
+  const colors=['#e11d48','#7c3aed','#0ea5e9','#10b981','#f59e0b','#ec4899'];
+  const color=colors[Math.floor(Math.random()*colors.length)];
+  S.accounts.push({id:uid(),username:u,displayName:d||u,bio:'',color,avatarUrl:makeAvatar(u,color,200),followers:0,following:0,fake:false,createdAt:Date.now()});
+  S.activeId=S.accounts[S.accounts.length-1].id;persist();clearModal();render();showToast(`@${u} added!`);
+}
+
+function switchAccount(id){S.activeId=id;persist();clearModal();render();showToast(`Switched to @${getAccount(id)?.username}`);}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function toggleLike(postId){
+  const post=S.posts.find(p=>p.id===postId);if(!post||!S.activeId)return;
+  if(!Array.isArray(post.likes))post.likes=[];
+  const idx=post.likes.indexOf(S.activeId);
+  if(idx===-1)post.likes.push(S.activeId);else post.likes.splice(idx,1);
+  persist();
+}
+
+function toggleSave(postId){
+  const idx=S.saved.indexOf(postId);
+  if(idx===-1)S.saved.push(postId);else S.saved.splice(idx,1);
+  persist();showToast(idx===-1?'Saved!':'Removed from saved');
+}
+
+function toggleFollow(targetId){
+  if(!S.activeId||targetId===S.activeId)return;
+  const idx=S.follows.findIndex(f=>f.followerId===S.activeId&&f.followingId===targetId);
+  if(idx===-1)S.follows.push({followerId:S.activeId,followingId:targetId});
+  else S.follows.splice(idx,1);
+  persist();
+}
+
+function addComment(postId,text){
+  const post=S.posts.find(p=>p.id===postId);if(!post||!text.trim())return;
+  post.comments.push({id:uid(),fromId:S.activeId,text:text.trim(),likes:[],createdAt:Date.now()});
+  persist();render();
+}
+
+function quickComment(input){
+  const text=input.value.trim();const postId=input.dataset.post;
+  if(!text||!postId)return;
+  addComment(postId,text);input.value='';
+}
+
+function setView(v){S.view=v;if(v==='profile'&&!S.profileId)S.profileId=S.activeId;persist();render();}
+function viewProfile(id){S.profileId=id;S.view='profile';persist();render();}
+function resetData(){if(!confirm('Reset all data?'))return;localStorage.removeItem(SK);location.reload();}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+async function init(){
+  hydrate();
+  if(!S.initialized)await seed();
+  if(!S.activeId&&S.accounts.length)S.activeId=S.accounts[0].id;
+  persist();render();
+}
+
+init();
+</script>
+</body>
 </html>
